@@ -164,11 +164,12 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     lv_img_set_src(art, bunny_frames[current_img_index]);
     lv_obj_align(art, LV_ALIGN_TOP_LEFT, 20, 0);
 
-    /* Fixed signature "爱德华" (pre-rotated 18x50 image) at the bottom of
-     * the strip, horizontally centred, layered on top of the artwork. */
+    /* Fixed signature "爱德华" (pre-rotated 18x50 image = 50 wide x 18 tall
+     * physically): horizontally centred (11px margins on the 72px strip) and
+     * flush against the physical bottom edge (LVGL x 126..143). */
     lv_obj_t *name = lv_img_create(widget->obj);
     lv_img_set_src(name, &edward_name);
-    lv_obj_align(name, LV_ALIGN_TOP_LEFT, 90, 27);
+    lv_obj_align(name, LV_ALIGN_TOP_LEFT, 126, 11);
 
     sys_slist_append(&widgets, &widget->node);
 
