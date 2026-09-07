@@ -1,0 +1,9 @@
+# Build outputs and backups
+firmware/
+
+# Debug captures
+keyboard_log.txt
+*.log
+
+# Python
+__pycache__/

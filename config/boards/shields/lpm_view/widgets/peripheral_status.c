@@ -30,6 +30,7 @@ LV_IMG_DECLARE(vader);
 LV_IMG_DECLARE(blackhole);
 LV_IMG_DECLARE(plane);
 LV_IMG_DECLARE(mounta);
+LV_IMG_DECLARE(edward_name);
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -162,6 +163,12 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     lv_obj_t *art = lv_img_create(widget->obj);
     lv_img_set_src(art, bunny_frames[current_img_index]);
     lv_obj_align(art, LV_ALIGN_TOP_LEFT, 20, 0);
+
+    /* Fixed signature "爱德华" (pre-rotated 18x50 image) at the bottom of
+     * the strip, horizontally centred, layered on top of the artwork. */
+    lv_obj_t *name = lv_img_create(widget->obj);
+    lv_img_set_src(name, &edward_name);
+    lv_obj_align(name, LV_ALIGN_TOP_LEFT, 90, 27);
 
     sys_slist_append(&widgets, &widget->node);
 

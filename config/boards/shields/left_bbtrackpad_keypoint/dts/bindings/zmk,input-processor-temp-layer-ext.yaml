@@ -1,0 +1,36 @@
+# Extended temporary layer input processor, based on ZMK's
+# zmk,input-processor-temp-layer (v0.3.0).
+#
+# SPDX-License-Identifier: MIT
+
+description: >
+  Input Processor for temporarily enabling a layer after input events.
+
+  Extended with an arm-only mode: such an instance never activates the layer
+  itself, but while the layer is already active each event pushes the layer
+  exit deadline out again. Used so keyboard mouse buttons (&mkp LCLK/RCLK
+  etc.) refresh the mouse layer exit timer without ever turning the layer on.
+
+compatible: "zmk,input-processor-temp-layer-ext"
+
+include: ip_two_param.yaml
+
+properties:
+  require-prior-idle-ms:
+    type: int
+    required: false
+    default: 0
+    description: Time in milliseconds that must pass after the last keystroke before the layer can be toggled
+
+  excluded-positions:
+    type: array
+    required: false
+    default: []
+    description: Array of key positions that will NOT trigger layer deactivation when pressed
+
+  arm-only:
+    type: boolean
+    required: false
+    description: >
+      Never activate the layer from these input events; only refresh the
+      layer exit timeout while the layer is already active.
