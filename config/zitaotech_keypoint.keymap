@@ -8,6 +8,12 @@
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/outputs.h>
+
+/* Hi-res wheel (CONFIG_ZMK_POINTING_SMOOTH_SCROLLING): wheel units are
+ * 1/16 of a detent, so raise the &msc scroll-key speed 16x to keep the
+ * old per-notch feel (10 notches/s -> 160 units/s). */
+#define ZMK_POINTING_DEFAULT_SCRL_VAL 160
+
 #include <dt-bindings/zmk/pointing.h>
 #include <dt-bindings/zmk/mouse.h>
 #include <dt-bindings/zmk/backlight.h>

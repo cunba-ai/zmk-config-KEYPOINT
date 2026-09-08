@@ -78,6 +78,7 @@ static struct k_work_q a320_workq;
 /* ========= Watch Dog ========= */
 static float scroll_residual_x = 0;
 static float scroll_residual_y = 0;
+static uint32_t last_scroll_tick = 0;
 static uint32_t last_activity_time = 0;
 #define A320_WDT_TIMEOUT 200
 /* ========= global ========= */
@@ -341,13 +342,28 @@ static void a320_work_cb(struct k_work *work) {
         if (just_enter_scroll) {
             data->scroll_residue_x = dx * SCROLL_X_DIR;
             data->scroll_residue_y = dy * SCROLL_Y_DIR;
+            scroll_residual_x = 0;
+            scroll_residual_y = 0;
+            last_scroll_tick = now;
         }
-        float speed = sqrtf((float)(dx * dx + dy * dy));
-        float scale = (speed > 80)   ? 0.05f
-                      : (speed > 40) ? 0.04f
-                      : (speed > 20) ? 0.03f
-                      : (speed > 5)  ? 0.02f
-                                     : 0.015f;
+
+        /* Hi-res wheel: with CONFIG_ZMK_POINTING_SMOOTH_SCROLLING the host
+         * sees 16 units per detent, so emit a dense stream of small units
+         * instead of one big notch per report. dx/dy here are accumulated
+         * since the previous read, so normalize speed to counts per
+         * millisecond before applying the tiers. */
+        uint32_t dt = now - last_scroll_tick;
+        if (dt == 0) {
+            dt = 1;
+        }
+        last_scroll_tick = now;
+
+        float speed = sqrtf((float)(dx * dx + dy * dy)) / (float)dt;
+        float scale = (speed > 3.2f)  ? 0.31f
+                      : (speed > 1.6f) ? 0.25f
+                      : (speed > 0.8f) ? 0.18f
+                      : (speed > 0.2f) ? 0.12f
+                                       : 0.09f;
         scroll_residual_x += dx * scale;
         scroll_residual_y += dy * scale;
 
@@ -358,7 +374,7 @@ static void a320_work_cb(struct k_work *work) {
         scroll_residual_y -= out_y;
         input_report_rel(dev, INPUT_REL_HWHEEL, out_x, false, K_FOREVER);
         input_report_rel(dev, INPUT_REL_WHEEL, -out_y, true, K_FOREVER);
-        k_msleep(25);
+        k_msleep(10);
     } else if (!capslock) {
 
         uint8_t a320_led_brt = indicator_tp_get_last_valid_brightness();
