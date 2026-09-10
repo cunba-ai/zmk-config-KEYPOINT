@@ -56,6 +56,17 @@
             codes = <INPUT_BTN_3>;
             bindings = <&kp UP>;
         };
+
+        /* Quadruples wheel scroll speed while the left layer-2 key is held
+         * (position 46 = left &mo 2), but only while the MOUSE layer (3)
+         * is active - i.e. during actual scrolling. */
+        ip_scroll_boost: ip_scroll_boost {
+            compatible = "zmk,input-processor-scroll-boost";
+            #input-processor-cells = <0>;
+            boost-factor = <4>;
+            boost-positions = <46>;
+            active-layer = <3>;
+        };
     };
 };
 
@@ -217,6 +228,7 @@
     status = "okay";
     input-processors =
         <&zip_temp_layer 3 600>,
+        <&ip_scroll_boost>,
         <&ip_behaviors0>,
         <&ip_behaviors1>,
         <&ip_behaviors2>,

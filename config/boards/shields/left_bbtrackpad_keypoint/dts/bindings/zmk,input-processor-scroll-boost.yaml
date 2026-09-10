@@ -1,0 +1,34 @@
+# Scroll boost input processor.
+#
+# Scales relative wheel input (INPUT_REL_WHEEL / INPUT_REL_HWHEEL) by
+# boost-factor while any key position in boost-positions is held, but only
+# while the layer in active-layer is active.
+#
+# SPDX-License-Identifier: MIT
+
+description: >
+  Input Processor scaling scroll wheel speed while configured key
+  positions are held, gated to a layer.
+
+compatible: "zmk,input-processor-scroll-boost"
+
+include: ip_zero_param.yaml
+
+properties:
+  boost-factor:
+    type: int
+    required: true
+    description: Multiplier applied to wheel input while a boost key is held
+
+  boost-positions:
+    type: array
+    required: true
+    description: Key positions that enable the boost while held
+
+  active-layer:
+    type: int
+    required: false
+    default: -1
+    description: >
+      Only apply the boost while this layer index is active.
+      -1 removes the gate (boost on any layer).
