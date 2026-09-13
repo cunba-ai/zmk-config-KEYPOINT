@@ -1,0 +1,52 @@
+# Pointer boost input processor.
+#
+# While a key position in boost-positions is held and the layer in
+# active-layer is active, wheel input is multiplied by boost-factor and
+# cursor movement is divided down to a slow, capped rate.
+#
+# SPDX-License-Identifier: MIT
+
+description: >
+  Input Processor boosting scroll speed and slowing cursor movement to a
+  precise rate while configured key positions are held.
+
+compatible: "zmk,input-processor-pointer-boost"
+
+include: ip_zero_param.yaml
+
+properties:
+  boost-factor:
+    type: int
+    required: true
+    description: Multiplier applied to wheel input while a boost key is held
+
+  move-divisor:
+    type: int
+    required: false
+    default: 1
+    description: >
+      Divisor applied to relative cursor movement while a boost key is
+      held, with a fractional remainder carried across events.
+      1 disables the precision mode.
+
+  move-max-step:
+    type: int
+    required: false
+    default: 0
+    description: >
+      Maximum movement in pixels reported per event while a boost key is
+      held; excess is dropped so hard pushes move at a fixed slow rate.
+      0 disables the cap.
+
+  boost-positions:
+    type: array
+    required: true
+    description: Key positions that enable the boost while held
+
+  active-layer:
+    type: int
+    required: false
+    default: -1
+    description: >
+      Only apply the boost while this layer index is active.
+      -1 removes the gate (boost on any layer).
