@@ -73,6 +73,16 @@
     };
 
     behaviors {
+         prec_rc: behavior_precision_rightclick {
+           compatible = "zmk,behavior-hold-tap";
+           #binding-cells = <2>;
+           flavor = "hold-preferred";     /* 按住期间按其他键不触发右键 (用法: &prec_rc 0 RCLK) */
+           tapping-term-ms = <200>;       /* 按住 200ms 以上 = 纯精确定位, 不出输出 */
+           bindings = <&none &mkp>;        /* hold=none, tap=mouse key */
+        };
+    };
+
+    behaviors {
         BLE_encoder: BLE_encoder {
             compatible = "zmk,behavior-sensor-rotate";
             #sensor-binding-cells = <0>;
@@ -123,7 +133,7 @@
 &kp TAB   &kp Q     &kp W          &kp E     &kp R     &kp T                                                         &kp Y       &M_kp MB3 U    &kp I      &kp O     &kp P     &kp BSPC
 &kp CAPS  &kp A     &kp S          &kp D     &kp F     &kp G      &mkp LCLK                         &mkp LCLK        &kp H       &M_kp MB1 J    &kp K      &kp L     &kp SEMI  &kp ENTER
 &kp LSHFT &kp Z     &kp X          &kp C     &kp V     &kp B      &msc SCRL_DOWN   &msc SCRL_UP     &none  &none     &kp N       &M_kp MB2 M    &kp COMMA  &kp DOT   &kp FSLH  &kp RSHFT
-&kp LCTRL &kp LGUI  &kp  LALT      &none     &mo 2     &kp SPACE  &mkp MB1                         &LMouse_sc 0 MB1  &tdRMCLK    &mo 2          &kp C_MUTE &kp MINUS &kp EQUAL &kp GRAVE
+&kp LCTRL &kp LGUI  &kp  LALT      &none     &mo 2     &kp SPACE  &mkp MB1                         &LMouse_sc 0 MB1  &prec_rc 0 RCLK    &mo 2          &kp C_MUTE &kp MINUS &kp EQUAL &kp GRAVE
             >;
         };
 

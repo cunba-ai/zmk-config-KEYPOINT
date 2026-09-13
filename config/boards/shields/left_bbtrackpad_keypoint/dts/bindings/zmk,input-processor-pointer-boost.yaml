@@ -38,10 +38,28 @@ properties:
       held; excess is dropped so hard pushes move at a fixed slow rate.
       0 disables the cap.
 
+  clutch-idle-ms:
+    type: int
+    required: false
+    default: 200
+    description: >
+      After the last precision key is released during movement, the
+      pointer is frozen until movement has been idle for this long;
+      pushing again afterwards resumes movement.
+
   boost-positions:
     type: array
-    required: true
-    description: Key positions that enable the boost while held
+    required: false
+    default: []
+    description: Key positions that enable the scroll speed boost while held
+
+  precision-positions:
+    type: array
+    required: false
+    default: []
+    description: >
+      Key positions that enable the cursor precision mode while held,
+      independent of the wheel boost trigger list.
 
   active-layer:
     type: int

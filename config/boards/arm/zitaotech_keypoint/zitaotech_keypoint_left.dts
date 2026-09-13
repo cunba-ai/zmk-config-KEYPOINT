@@ -57,17 +57,23 @@
             bindings = <&kp UP>;
         };
 
-        /* While the left layer-2 key is held (position 46 = left &mo 2) and
-         * the MOUSE layer (3) is active: wheel input is multiplied (scroll
-         * speed boost) and cursor movement is divided down to a slow, fixed
-         * rate for precise positioning. */
+        /* While the MOUSE layer (3) is active:
+         * - wheel input is multiplied while the left layer-2 key (46) is
+         *   held (scroll speed boost);
+         * - cursor movement is divided down to a slow, fixed rate while
+         *   the right space key (50, rebound to &none on the MOUSE layer)
+         *   is held, for precise positioning. Releasing it while still
+         *   moving freezes the cursor (clutch) until the trackpoint is
+         *   released and pushed again. */
         ip_pointer_boost: ip_pointer_boost {
             compatible = "zmk,input-processor-pointer-boost";
             #input-processor-cells = <0>;
             boost-factor = <4>;
             move-divisor = <8>;
             move-max-step = <1>;
+            clutch-idle-ms = <200>;
             boost-positions = <46>;
+            precision-positions = <50>;
             active-layer = <3>;
         };
     };
