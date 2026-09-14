@@ -14,12 +14,13 @@
  *    `precision-positions` key is held. The cap turns hard pushes into a
  *    fixed, slow movement rate for precise positioning.
  *
- * Movement clutch: when the last precision key is released while the
- * pointer is still moving, output is muted (the cursor freezes) until
- * movement has stopped for `clutch-idle-ms`. This keeps the cursor from
- * jumping away at full speed when the precision key is released over the
- * target (e.g. to free a finger for clicking); movement resumes once the
- * pointing device is released and pushed again.
+ * Release mute: when the last precision key is released while the
+ * pointer is still moving, movement output is muted for
+ * `release-mute-ms`. This keeps the cursor from jumping away at full
+ * speed when the precision key is released over the target (e.g. to
+ * free a finger for clicking). Once the window expires, movement is
+ * emitted again automatically if the pointing device is still being
+ * pushed; pressing a precision key again cancels the mute immediately.
  *
  * Wheel and movement have separate trigger lists on purpose: a key can
  * slow the cursor without also boosting scroll speed.
@@ -50,7 +51,7 @@ struct pointer_boost_config {
     uint8_t boost_factor;
     uint8_t move_divisor;
     uint8_t move_max_step;
-    uint16_t clutch_idle_ms;
+    uint16_t release_mute_ms;
     int16_t active_layer;
     const uint16_t *boost_positions;
     size_t num_boost_positions;
@@ -61,9 +62,10 @@ struct pointer_boost_config {
 struct pointer_boost_data {
     atomic_t boost_keys_down;
     atomic_t precision_keys_down;
-    /* Movement clutch: set when the last precision key is released during
-     * movement; cleared once movement has been idle for clutch-idle-ms. */
-    atomic_t move_clutch;
+    /* Release mute deadline (0 = not muted). Set when the last precision
+     * key is released during movement; movement events are suppressed
+     * until this timestamp passes. */
+    atomic_t mute_until_ms;
     uint32_t last_move_ms;
     /* Fractional movement left over from the divisor, per axis. Only the
      * input thread touches these, so no locking is needed. */
@@ -141,19 +143,18 @@ static int pointer_boost_handle_event(const struct device *dev, struct input_eve
     case INPUT_REL_X:
     case INPUT_REL_Y: {
         uint32_t now = k_uptime_get_32();
-        uint32_t dt = now - data->last_move_ms;
         data->last_move_ms = now;
 
-        if (atomic_get(&data->move_clutch)) {
-            if (dt > cfg->clutch_idle_ms) {
-                atomic_clear(&data->move_clutch);
-                LOG_DBG("Movement clutch released (idle %u ms)", dt);
-            } else {
-                /* Still pushing after the precision key was released: freeze
-                 * the pointer where it is instead of jumping at full speed. */
+        uint32_t mute_until = (uint32_t)atomic_get(&data->mute_until_ms);
+        if (mute_until != 0) {
+            if ((int32_t)(now - mute_until) < 0) {
+                /* Shortly after the precision key was released: freeze the
+                 * pointer instead of letting it jump at full speed. */
                 event->value = 0;
                 break;
             }
+            atomic_set(&data->mute_until_ms, 0);
+            LOG_DBG("Release mute expired, movement resumes");
         }
 
         if (trigger_allowed(cfg, &data->precision_keys_down)) {
@@ -187,6 +188,7 @@ static int pointer_boost_handle_event(const struct device *dev, struct input_eve
         if (is_listed(cfg->precision_positions, cfg->num_precision_positions, ev->position)) {     \
             if (ev->state) {                                                                       \
                 atomic_inc(&data->precision_keys_down);                                            \
+                atomic_set(&data->mute_until_ms, 0);                                               \
                 LOG_DBG("Precision key %d pressed (%ld down)", (int)ev->position,                  \
                         (long)atomic_get(&data->precision_keys_down));                             \
             } else if (atomic_get(&data->precision_keys_down) > 0) {                               \
@@ -194,10 +196,12 @@ static int pointer_boost_handle_event(const struct device *dev, struct input_eve
                 LOG_DBG("Precision key %d released (%ld down)", (int)ev->position,                 \
                         (long)atomic_get(&data->precision_keys_down));                             \
                 if (atomic_get(&data->precision_keys_down) == 0) {                                 \
-                    uint32_t since_move = k_uptime_get_32() - data->last_move_ms;                  \
-                    if (since_move < cfg->clutch_idle_ms && layer_gate_open(cfg)) {                \
-                        atomic_set(&data->move_clutch, 1);                                         \
-                        LOG_DBG("Movement clutch engaged");                                        \
+                    uint32_t now = k_uptime_get_32();                                              \
+                    if ((now - data->last_move_ms) < cfg->release_mute_ms &&                       \
+                        layer_gate_open(cfg)) {                                                    \
+                        atomic_set(&data->mute_until_ms,                                           \
+                                   (atomic_val_t)(now + cfg->release_mute_ms));                    \
+                        LOG_DBG("Movement muted for %u ms", (unsigned)cfg->release_mute_ms);       \
                     }                                                                              \
                 }                                                                                  \
             }                                                                                      \
@@ -231,7 +235,7 @@ static const struct zmk_input_processor_driver_api pointer_boost_driver_api = {
         .boost_factor = DT_INST_PROP(n, boost_factor),                                             \
         .move_divisor = DT_INST_PROP_OR(n, move_divisor, 1),                                       \
         .move_max_step = DT_INST_PROP_OR(n, move_max_step, 0),                                     \
-        .clutch_idle_ms = DT_INST_PROP_OR(n, clutch_idle_ms, 200),                                 \
+        .release_mute_ms = DT_INST_PROP_OR(n, release_mute_ms, 200),                                \
         .active_layer = DT_INST_PROP_OR(n, active_layer, -1),                                      \
         .boost_positions = pointer_boost_wheel_positions_##n,                                      \
         .num_boost_positions = DT_INST_PROP_LEN(n, boost_positions),                               \

@@ -38,14 +38,16 @@ properties:
       held; excess is dropped so hard pushes move at a fixed slow rate.
       0 disables the cap.
 
-  clutch-idle-ms:
+  release-mute-ms:
     type: int
     required: false
     default: 200
     description: >
-      After the last precision key is released during movement, the
-      pointer is frozen until movement has been idle for this long;
-      pushing again afterwards resumes movement.
+      After the last precision key is released during movement, movement
+      output is muted for this long (the pointer freezes, e.g. to allow
+      clicking the target). Once the window expires, movement is emitted
+      again automatically while the pointing device keeps moving;
+      pressing a precision key again cancels the mute immediately.
 
   boost-positions:
     type: array
