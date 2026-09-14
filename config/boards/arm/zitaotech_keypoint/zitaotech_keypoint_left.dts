@@ -60,18 +60,19 @@
         /* While the MOUSE layer (3) is active:
          * - wheel input is multiplied while the left layer-2 key (46) is
          *   held (scroll speed boost);
-         * - cursor movement is divided down to a slow, fixed rate while
-         *   the right space key (50, rebound to &prec_rc on the MOUSE
-         *   layer) is held, for precise positioning. Releasing it while
-         *   still moving mutes movement for release-mute-ms (the cursor
-         *   freezes), then movement resumes automatically if the
+         * - cursor movement is divided by move-divisor=4 while the right
+         *   space key (50, rebound to &prec_rc on the MOUSE layer) is
+         *   held: slower than normal at every push strength, but still
+         *   scales with how hard the trackpoint is pushed (no per-event
+         *   cap). Releasing it while still moving mutes movement for
+         *   release-mute-ms, then movement resumes automatically if the
          *   trackpoint keeps moving. */
         ip_pointer_boost: ip_pointer_boost {
             compatible = "zmk,input-processor-pointer-boost";
             #input-processor-cells = <0>;
             boost-factor = <4>;
-            move-divisor = <8>;
-            move-max-step = <1>;
+            move-divisor = <4>;
+            move-max-step = <0>;
             release-mute-ms = <200>;
             boost-positions = <46>;
             precision-positions = <50>;
