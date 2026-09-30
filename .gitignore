@@ -7,3 +7,4 @@ keyboard_log.txt
 
 # Python
 __pycache__/
+tp_trace_*.csv

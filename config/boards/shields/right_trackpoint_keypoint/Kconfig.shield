@@ -18,29 +18,32 @@ config TRACKPOINT_POINTER_ACCEL
 
 config TRACKPOINT_ACCEL_MIN_PERCENT
     int "Pointer acceleration minimum gain (Percentage, 60 = 0.6x)"
-    default 60
+    default 62
     help
       Gain applied to the slowest movements (precise end of the curve).
+      Calibrated 2026-09-30 from native ThinkPad trace: host ballistics
+      give ~0.31 px/count at light touch.
 
 config TRACKPOINT_ACCEL_MAX_PERCENT
     int "Pointer acceleration maximum gain (Percentage, 260 = 2.6x)"
-    default 260
+    default 170
     help
       Gain applied at and above the configured maximum input speed.
+      Calibrated 2026-09-30: native ratio saturates ~0.85 px/count.
 
 config TRACKPOINT_ACCEL_VMAX_X10
     int "Input speed where max gain is reached (counts/ms, times 10)"
-    default 20
+    default 45
     help
       TrackPoint input speed (counts per millisecond, x10) at which the
-      acceleration curve saturates. 20 = 2.0 counts/ms.
+      acceleration curve saturates. Calibrated 2026-09-30: 45 = 4.5 c/ms.
 
 config TRACKPOINT_ACCEL_POW_X10
     int "Acceleration curve steepness (exponent, times 10)"
-    default 12
+    default 9
     help
-      Shape of the curve between min and max gain. 10 = straight line,
-      higher = more precise low end with a steeper high end.
+      Shape of the curve between min and max gain. Calibrated
+      2026-09-30 from native trace fit (nearly linear).
 
 config TRACKPOINT_SCROLL_X_DIR
     int "Scroll X direction multiplier (1 for normal, -1 for inverted)"
