@@ -62,8 +62,6 @@ static struct k_work_q tp_workq;
 
 // --- Mouse base setting  ---
 #define MOUSE_BASE_SPEED (CONFIG_TRACKPOINT_MOUSE_BASE_SPEED_PERCENT / 100.0f)
-#define MOUSE_SENS_BASE (CONFIG_TRACKPOINT_MOUSE_SENS_BASE_PERCENT / 100.0f)
-#define MOUSE_SENS_STEP (CONFIG_TRACKPOINT_MOUSE_SENS_STEP_PERCENT / 100.0f)
 
 /* ========= Motion GPIO ========= */
 
@@ -152,21 +150,46 @@ struct trackpoint_data {
     int16_t arrow_residue_y;
 };
 
-/* ========= EXPONENTIAL caculate ========= */
-#ifdef CONFIG_TRACKPOINT_EXPONENTIAL
-#define TP_MAX_MULT 2.0f
-static inline float trackpoint_exponential_factor(int8_t dx, int8_t dy, uint32_t delta_ms) {
+/* ========= Pointer acceleration ========= */
+#ifdef CONFIG_TRACKPOINT_POINTER_ACCEL
+#define TP_ACCEL_MIN (CONFIG_TRACKPOINT_ACCEL_MIN_PERCENT / 100.0f)
+#define TP_ACCEL_MAX (CONFIG_TRACKPOINT_ACCEL_MAX_PERCENT / 100.0f)
+#define TP_ACCEL_VMAX (CONFIG_TRACKPOINT_ACCEL_VMAX_X10 / 10.0f)
+#define TP_ACCEL_POW (CONFIG_TRACKPOINT_ACCEL_POW_X10 / 10.0f)
+
+/* EMA smoothing of the measured input speed: keeps the gain steady for
+ * precise work while still tracking quick force changes without lag. */
+#define TP_ACCEL_EMA_ALPHA 0.35f
+/* After a pause this long the speed estimate restarts from zero, so a new
+ * touch always begins at the precise (slow) end of the curve. */
+#define TP_ACCEL_IDLE_RESET_MS 60
+
+static float tp_speed_ema = 0.0f;
+/* Fractional remainder per axis: light pushes scale below one count per
+ * packet; without carrying the remainder they would be truncated away. */
+static float mouse_resid_x = 0.0f;
+static float mouse_resid_y = 0.0f;
+
+static float trackpoint_accel_factor(int8_t dx, int8_t dy, uint32_t delta_ms) {
     if (delta_ms == 0)
         delta_ms = 1;
 
-    int dist = abs(dx) + abs(dy);
-    if (dist < 1)
-        return 1.0f;
+    float dist = sqrtf((float)(dx * dx + dy * dy));
+    float speed = dist / (float)delta_ms;
 
-    float speed = (float)dist / (float)delta_ms;
-    float mult = expf(speed * 1.307357f);
+    if (delta_ms > TP_ACCEL_IDLE_RESET_MS) {
+        tp_speed_ema = 0.0f;
+    } else {
+        tp_speed_ema += TP_ACCEL_EMA_ALPHA * (speed - tp_speed_ema);
+    }
 
-    return (mult > TP_MAX_MULT) ? TP_MAX_MULT : mult;
+    float t = tp_speed_ema / TP_ACCEL_VMAX;
+    if (t < 0.0f)
+        t = 0.0f;
+    if (t > 1.0f)
+        t = 1.0f;
+
+    return TP_ACCEL_MIN + (TP_ACCEL_MAX - TP_ACCEL_MIN) * powf(t, TP_ACCEL_POW);
 }
 #endif
 
@@ -369,23 +392,27 @@ static void trackpoint_work_cb(struct k_work *work) {
 
     } else {
 
-        uint8_t tp_led_brt = custom_led_get_last_valid_brightness();
-        float tp_factor = MOUSE_SENS_BASE + MOUSE_SENS_STEP * tp_led_brt;
-            
-#ifdef CONFIG_TRACKPOINT_EXPONENTIAL
+#ifdef CONFIG_TRACKPOINT_POINTER_ACCEL
         uint32_t delta = now - data->last_packet_time;
-        float exp_mult = trackpoint_exponential_factor(dx, dy, delta);
+        float accel_mult = trackpoint_accel_factor(dx, dy, delta);
 #else
-        float exp_mult = 1.0f;
+        float accel_mult = 1.0f;
 #endif
 
         float slow_mult = slow_key_pressed ? SLOW_KEY_MULTIPLIER : 1.0f;
 
-        float fx = dx * MOUSE_BASE_SPEED * tp_factor * exp_mult * slow_mult;
-        float fy = dy * MOUSE_BASE_SPEED * tp_factor * exp_mult * slow_mult;
+        float gain = MOUSE_BASE_SPEED * accel_mult * slow_mult;
 
-        input_report_rel(dev, INPUT_REL_X, -(int)fx, false, K_NO_WAIT);
-        input_report_rel(dev, INPUT_REL_Y, -(int)fy, true, K_NO_WAIT);
+        mouse_resid_x += dx * gain;
+        mouse_resid_y += dy * gain;
+
+        int out_x = (int)mouse_resid_x;
+        int out_y = (int)mouse_resid_y;
+        mouse_resid_x -= out_x;
+        mouse_resid_y -= out_y;
+
+        input_report_rel(dev, INPUT_REL_X, -out_x, false, K_NO_WAIT);
+        input_report_rel(dev, INPUT_REL_Y, -out_y, true, K_NO_WAIT);
     }
 
     last_scroll_key_pressed = scroll_key_pressed;

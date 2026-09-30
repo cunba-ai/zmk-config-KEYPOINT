@@ -7,11 +7,40 @@ config SHIELD_RIGHT_TRACKPOINT_KEYPOINT
 
 menu "TrackPoint Advanced Settings"
 
-config TRACKPOINT_EXPONENTIAL
-    bool "Enable TrackPoint exponential acceleration"
+config TRACKPOINT_POINTER_ACCEL
+    bool "Enable velocity-based pointer acceleration"
     default y
     help
-      Enable exponential acceleration for TrackPoint movement,
+      Lenovo-style acceleration: output gain follows how hard/fast the
+      TrackPoint is pushed. Light touch = slow precise movement, firm
+      push = fast travel. The gain curve is min..max, reaching max at the
+      configured input speed.
+
+config TRACKPOINT_ACCEL_MIN_PERCENT
+    int "Pointer acceleration minimum gain (Percentage, 60 = 0.6x)"
+    default 60
+    help
+      Gain applied to the slowest movements (precise end of the curve).
+
+config TRACKPOINT_ACCEL_MAX_PERCENT
+    int "Pointer acceleration maximum gain (Percentage, 260 = 2.6x)"
+    default 260
+    help
+      Gain applied at and above the configured maximum input speed.
+
+config TRACKPOINT_ACCEL_VMAX_X10
+    int "Input speed where max gain is reached (counts/ms, times 10)"
+    default 20
+    help
+      TrackPoint input speed (counts per millisecond, x10) at which the
+      acceleration curve saturates. 20 = 2.0 counts/ms.
+
+config TRACKPOINT_ACCEL_POW_X10
+    int "Acceleration curve steepness (exponent, times 10)"
+    default 12
+    help
+      Shape of the curve between min and max gain. 10 = straight line,
+      higher = more precise low end with a steeper high end.
 
 config TRACKPOINT_SCROLL_X_DIR
     int "Scroll X direction multiplier (1 for normal, -1 for inverted)"
@@ -50,14 +79,5 @@ config TRACKPOINT_DOMINANT_DENOMINATOR
 config TRACKPOINT_MOUSE_BASE_SPEED_PERCENT
     int "Mouse base speed (Percentage, 50 = 0.5)"
     default 50
-
-config TRACKPOINT_MOUSE_SENS_BASE_PERCENT
-    int "Mouse sensitivity base (Percentage, 30 = 0.3)"
-    default 30
-
-config TRACKPOINT_MOUSE_SENS_STEP_PERCENT
-    int "Mouse sensitivity step per LED brightness (Percentage, 1 = 0.01)"
-    default 1
-
 
 endmenu
