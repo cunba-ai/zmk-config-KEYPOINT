@@ -90,6 +90,16 @@
         };
     };
 
+    behaviors {
+        /* 按下: 立即退出鼠标层(param1)并临时进入数字层(param2), 松开恢复。
+         * 用法: &mfl 3 1 —— 鼠标层里按 Lower 拇指键直接输数字 */
+        mfl: mouse_free_layer {
+            compatible = "zmk,behavior-mfl";
+            #binding-cells = <2>;
+            display-name = "Exit Mouse To Layer";
+        };
+    };
+
 
     keymap {
         compatible = "zmk,keymap";
@@ -133,7 +143,7 @@
 &kp TAB   &kp Q     &kp W          &kp E     &kp R     &kp T                                                         &kp Y       &M_kp MB3 U    &kp I      &kp O     &kp P     &kp BSPC
 &kp CAPS  &kp A     &kp S          &kp D     &kp F     &kp G      &mkp LCLK                         &mkp LCLK        &kp H       &M_kp MB1 J    &kp K      &kp L     &kp SEMI  &kp ENTER
 &kp LSHFT &kp Z     &kp X          &kp C     &kp V     &kp B      &msc SCRL_DOWN   &msc SCRL_UP     &none  &none     &kp N       &M_kp MB2 M    &kp COMMA  &kp DOT   &kp FSLH  &kp RSHFT
-&kp LCTRL &kp LGUI  &kp  LALT      &none     &mo 2     &kp SPACE  &mkp MB1                         &LMouse_sc 0 MB1  &prec_rc 0 RCLK    &mo 2          &kp C_MUTE &kp MINUS &kp EQUAL &kp GRAVE
+&kp LCTRL &kp LGUI  &kp  LALT      &none     &mo 2     &kp SPACE  &mfl 3 1                         &LMouse_sc 0 MB1  &prec_rc 0 RCLK    &mo 2          &kp C_MUTE &kp MINUS &kp EQUAL &kp GRAVE
             >;
         };
 

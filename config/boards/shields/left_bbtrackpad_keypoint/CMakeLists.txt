@@ -4,6 +4,7 @@ zephyr_library_sources(custom_driver_left/trackpad_led.c)
 zephyr_library_sources(custom_driver_left/custom_led.c)
 zephyr_library_sources(custom_driver_left/temp_layer_ext.c)
 zephyr_library_sources(custom_driver_left/pointer_boost.c)
+zephyr_library_sources(custom_driver_left/behavior_mfl.c)
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers)
 zephyr_library_include_directories(../../../include)

@@ -157,9 +157,12 @@ struct trackpoint_data {
 #define TP_ACCEL_VMAX (CONFIG_TRACKPOINT_ACCEL_VMAX_X10 / 10.0f)
 #define TP_ACCEL_POW (CONFIG_TRACKPOINT_ACCEL_POW_X10 / 10.0f)
 
-/* EMA smoothing of the measured input speed: keeps the gain steady for
- * precise work while still tracking quick force changes without lag. */
-#define TP_ACCEL_EMA_ALPHA 0.35f
+/* Asymmetric EMA smoothing of the measured input speed: the gain may rise
+ * gradually (steady precision at low speed) but must FALL fast, so that
+ * releasing force after a firm push doesn't keep amplifying the
+ * deceleration tail (cursor overshoot). */
+#define TP_ACCEL_EMA_ALPHA_UP 0.35f
+#define TP_ACCEL_EMA_ALPHA_DOWN 0.80f
 /* After a pause this long the speed estimate restarts from zero, so a new
  * touch always begins at the precise (slow) end of the curve. */
 #define TP_ACCEL_IDLE_RESET_MS 60
@@ -180,7 +183,9 @@ static float trackpoint_accel_factor(int8_t dx, int8_t dy, uint32_t delta_ms) {
     if (delta_ms > TP_ACCEL_IDLE_RESET_MS) {
         tp_speed_ema = 0.0f;
     } else {
-        tp_speed_ema += TP_ACCEL_EMA_ALPHA * (speed - tp_speed_ema);
+        float alpha =
+            (speed < tp_speed_ema) ? TP_ACCEL_EMA_ALPHA_DOWN : TP_ACCEL_EMA_ALPHA_UP;
+        tp_speed_ema += alpha * (speed - tp_speed_ema);
     }
 
     float t = tp_speed_ema / TP_ACCEL_VMAX;
