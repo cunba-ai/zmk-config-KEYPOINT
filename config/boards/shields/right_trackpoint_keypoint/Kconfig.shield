@@ -26,10 +26,11 @@ config TRACKPOINT_ACCEL_MIN_PERCENT
 
 config TRACKPOINT_ACCEL_MAX_PERCENT
     int "Pointer acceleration maximum gain (Percentage, 260 = 2.6x)"
-    default 170
+    default 230
     help
       Gain applied at and above the configured maximum input speed.
-      Calibrated 2026-09-30: native ratio saturates ~0.85 px/count.
+      Calibrated 2026-09-30 from native trace (170), raised to 230 after
+      user testing: firm pushes need more top-end speed on this host.
 
 config TRACKPOINT_ACCEL_VMAX_X10
     int "Input speed where max gain is reached (counts/ms, times 10)"
