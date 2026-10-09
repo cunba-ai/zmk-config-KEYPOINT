@@ -75,6 +75,10 @@ static struct k_work_q a320_workq;
 
 #define SLOW_KEY_MULTIPLIER 0.5f
 #define TOUCH_IDLE_TIMEOUT 50 // 30~80ms 看手感
+/* Per-axis fractional remainder for the mouse path (light pushes scale
+ * below one count per packet; without carrying they'd be truncated). */
+static float mouse_resid_x = 0.0f;
+static float mouse_resid_y = 0.0f;
 /* ========= Watch Dog ========= */
 static float scroll_residual_x = 0;
 static float scroll_residual_y = 0;
@@ -382,11 +386,22 @@ static void a320_work_cb(struct k_work *work) {
 
         float slow_mult = slow_key_pressed ? SLOW_KEY_MULTIPLIER : 1.0f;
 
-        float fx = dx * 3 / 4 * a320_factor * slow_mult;
-        float fy = dy * 3 / 4 * a320_factor * slow_mult;
+        /* Float gain with per-axis remainder carry: slow drags report 1-2
+         * counts per packet, which the old `dx * 3 / 4` integer division
+         * plus (int) truncation dropped entirely (cursor frozen, then
+         * jumping once the accumulated delta crossed the threshold). */
+        float gain = 0.75f * a320_factor * slow_mult;
 
-        input_report_rel(dev, INPUT_REL_X, (int)fx, false, K_NO_WAIT);
-        input_report_rel(dev, INPUT_REL_Y, (int)fy, true, K_NO_WAIT);
+        mouse_resid_x += dx * gain;
+        mouse_resid_y += dy * gain;
+
+        int out_x = (int)mouse_resid_x;
+        int out_y = (int)mouse_resid_y;
+        mouse_resid_x -= out_x;
+        mouse_resid_y -= out_y;
+
+        input_report_rel(dev, INPUT_REL_X, out_x, false, K_NO_WAIT);
+        input_report_rel(dev, INPUT_REL_Y, out_y, true, K_NO_WAIT);
     } else {
         touched = false;
     }
